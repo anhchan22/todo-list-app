@@ -1,129 +1,109 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Lock, Mail, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+    if (!name || !email || !password || !confirmPassword) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
     
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (password !== confirmPassword) {
+      toast.error('Mật khẩu không khớp');
       return;
     }
     
-    const result = register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password
-    });
+    if (password.length < 6) {
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+    
+    const result = register(name, email, password);
     
     if (result.success) {
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
+      toast.success('Tạo tài khoản thành công!');
+      navigate('/login');
     } else {
       toast.error(result.message);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <UserPlus className="auth-icon" />
-          <h2>Create Account</h2>
-          <p>Join us to manage your tasks</p>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <div className="input-wrapper">
-              <User className="input-icon" />
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-card">
+          <h2>Tạo tài khoản</h2>
+          <p>Tham gia để quản lý công việc của bạn</p>
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="name">Tên tài khoản</label>
               <input
                 type="text"
-                name="name"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={handleChange}
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nhập tên tài khoản của bạn"
                 required
               />
             </div>
-          </div>
-          
-          <div className="form-group">
-            <div className="input-wrapper">
-              <Mail className="input-icon" />
+            
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
               <input
                 type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Nhập email của bạn"
                 required
               />
             </div>
-          </div>
-          
-          <div className="form-group">
-            <div className="input-wrapper">
-              <Lock className="input-icon" />
+            
+            <div className="form-group">
+              <label htmlFor="password">Mật khẩu</label>
               <input
                 type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Nhập mật khẩu của bạn"
                 required
               />
             </div>
-          </div>
-          
-          <div className="form-group">
-            <div className="input-wrapper">
-              <Lock className="input-icon" />
+            
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Xác nhận mật khẩu</label>
               <input
                 type="password"
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Xác nhận mật khẩu của bạn"
                 required
               />
             </div>
-          </div>
+            
+            <button type="submit" className="auth-btn">
+              Đăng ký
+            </button>
+          </form>
           
-          <button type="submit" className="auth-btn">
-            Sign Up
-          </button>
-        </form>
-        
-        <div className="auth-footer">
-          <p>
-            Already have an account?{' '}
+          <p className="auth-footer">
+            Bạn đã có tài khoản?{' '}
             <Link to="/login" className="auth-link">
-              Sign in
+              Đăng nhập
             </Link>
           </p>
         </div>

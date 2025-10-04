@@ -5,75 +5,64 @@ const AuthContext = createContext();
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth phải được sử dụng trong AuthProvider');
   }
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const savedUser = localStorage.getItem('user');
+    const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
-    setLoading(false);
   }, []);
 
-  const login = (userData) => {
-    // Check if user exists in localStorage users array
+  //Đăng nhập
+  const login = (email, password) => {
     const users = JSON.parse(localStorage.getItem('users')) || [];
-    const existingUser = users.find(
-      u => u.email === userData.email && u.password === userData.password
-    );
+    const foundUser = users.find(u => u.email === email && u.password === password);
     
-    if (existingUser) {
-      const userToSave = { ...existingUser };
-      delete userToSave.password; // Don't save password in current user session
-      setUser(userToSave);
-      localStorage.setItem('user', JSON.stringify(userToSave));
+    if (foundUser) {
+      const userSession = { id: foundUser.id, name: foundUser.name, email: foundUser.email };
+      setUser(userSession);
+      localStorage.setItem('currentUser', JSON.stringify(userSession));
       return { success: true };
     } else {
-      return { success: false, message: 'Invalid email or password' };
+      return { success: false, message: 'Sai email hoặc mật khẩu' };
     }
   };
 
-  const register = (userData) => {
+  //Đăng ký
+  const register = (name, email, password) => {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     
-    // Check if user already exists
-    const existingUser = users.find(u => u.email === userData.email);
+    //check email đã tồn tại chưa
+    const existingUser = users.find(u => u.email === email);
     if (existingUser) {
-      return { success: false, message: 'User already exists with this email' };
+      return { success: false, message: 'Email đã được đăng ký' };
     }
     
-    // Add new user
+    //tạo user mới
     const newUser = {
       id: Date.now().toString(),
-      name: userData.name,
-      email: userData.email,
-      password: userData.password,
+      name,
+      email,
+      password,
       createdAt: new Date().toISOString()
     };
     
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
-    
-    // Auto login after registration
-    const userToSave = { ...newUser };
-    delete userToSave.password;
-    setUser(userToSave);
-    localStorage.setItem('user', JSON.stringify(userToSave));
-    
-    return { success: true };
+
+    return { success: true, message: 'Đăng ký thành công! Vui lòng đăng nhập.' };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('currentUser');
   };
 
   const value = {
@@ -81,7 +70,6 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    loading
   };
 
   return (

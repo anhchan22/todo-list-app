@@ -1,84 +1,75 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Lock, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  //chuyen trang
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const result = login(formData);
+    
+    if (!email || !password) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+
+    const result = login(email, password);
     
     if (result.success) {
-      toast.success('Login successful!');
+      toast.success('Đăng nhập thành công!');
       navigate('/dashboard');
     } else {
-      toast.error(result.message);
+      toast.error("Đăng nhập thất bại, vui lòng kiểm tra lại thông tin.");
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <User className="auth-icon" />
-          <h2>Welcome Back</h2>
-          <p>Sign in to your account</p>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <div className="input-wrapper">
-              <Mail className="input-icon" />
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-card">
+          <h2>Todo-List</h2>
+          <p>Đăng nhập vào tài khoản của bạn</p>
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
               <input
                 type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Nhập email của bạn"
                 required
               />
             </div>
-          </div>
-          
-          <div className="form-group">
-            <div className="input-wrapper">
-              <Lock className="input-icon" />
+            
+            <div className="form-group">
+              <label htmlFor="password">Mật khẩu</label>
               <input
                 type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Nhập mật khẩu của bạn"
                 required
               />
             </div>
-          </div>
+            
+            <button type="submit" className="auth-btn">
+              Đăng nhập
+            </button>
+          </form>
           
-          <button type="submit" className="auth-btn">
-            Sign In
-          </button>
-        </form>
-        
-        <div className="auth-footer">
-          <p>
-            Don't have an account?{' '}
+          <p className="auth-footer">
+            Bạn chưa có tài khoản?{' '}
             <Link to="/register" className="auth-link">
-              Sign up
+              Đăng ký
             </Link>
           </p>
         </div>

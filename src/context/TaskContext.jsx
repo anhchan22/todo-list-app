@@ -13,11 +13,15 @@ export const useTask = () => {
 
 export const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
+
+  //Lấy từ AuthContext để biết user nào đang đăng nhập
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
       loadTasks();
+    } else {
+      setTasks([]);
     }
   }, [user]);
 
@@ -40,17 +44,15 @@ export const TaskProvider = ({ children }) => {
     setTasks(updatedTasks);
   };
 
-  const addTask = (taskData) => {
+  const addTask = (title, description = '', deadline = '') => {
     const newTask = {
       id: Date.now().toString(),
       userId: user.id,
-      title: taskData.title,
-      description: taskData.description || '',
-      priority: taskData.priority || 'medium',
-      deadline: taskData.deadline || null,
+      title,
+      description,
+      deadline: deadline || null,
       completed: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
     
     const updatedTasks = [...tasks, newTask];
@@ -73,32 +75,10 @@ export const TaskProvider = ({ children }) => {
   };
 
   const toggleTaskComplete = (taskId) => {
-    updateTask(taskId, { completed: !tasks.find(task => task.id === taskId)?.completed });
-  };
-
-  const getTasksByPriority = (priority) => {
-    return tasks.filter(task => task.priority === priority);
-  };
-
-  const getOverdueTasks = () => {
-    const now = new Date();
-    return tasks.filter(task => 
-      task.deadline && 
-      new Date(task.deadline) < now && 
-      !task.completed
-    );
-  };
-
-  const getUpcomingTasks = (days = 3) => {
-    const now = new Date();
-    const futureDate = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
-    
-    return tasks.filter(task => 
-      task.deadline && 
-      new Date(task.deadline) >= now && 
-      new Date(task.deadline) <= futureDate &&
-      !task.completed
-    );
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      updateTask(taskId, { completed: !task.completed });
+    }
   };
 
   const value = {
@@ -106,11 +86,7 @@ export const TaskProvider = ({ children }) => {
     addTask,
     updateTask,
     deleteTask,
-    toggleTaskComplete,
-    getTasksByPriority,
-    getOverdueTasks,
-    getUpcomingTasks,
-    loadTasks
+    toggleTaskComplete
   };
 
   return (

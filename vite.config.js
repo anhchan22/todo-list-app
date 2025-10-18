@@ -4,4 +4,14 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+    server: {
+    proxy: {
+      "/api": {
+        target: "http://p-todo.ap-southeast-2.elasticbeanstalk.com",
+        changeOrigin: true,
+      },
+    },
+  },
+
 })
+

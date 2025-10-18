@@ -1,0 +1,5 @@
+- sdung api hien thi du lieu
+- lua chon category
+- phân trang, lọc cá task theo thể loại
+- tìm kiếm task
+- quản lý category (thêm sửa xóa xem)

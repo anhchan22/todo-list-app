@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 
 const TaskContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTask = () => {
   const context = useContext(TaskContext);
   if (!context) {
@@ -44,6 +45,7 @@ export const TaskProvider = ({ children }) => {
     setTasks(updatedTasks);
   };
 
+  
   const addTask = (title, description = '', deadline = '') => {
     const newTask = {
       id: Date.now().toString(),

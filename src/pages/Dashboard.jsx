@@ -112,15 +112,15 @@ const Dashboard = () => {
 
       <main className="dashboard-main">
         <div className="task-stats">
-          <div className="stat-card">
+          <div className="stat-card-total">
             <h3>{tasks.length}</h3>
             <p>Total Tasks</p>
           </div>
-          <div className="stat-card">
+          <div className="stat-card-pending">
             <h3>{pendingTasks}</h3>
             <p>Pending</p>
           </div>
-          <div className="stat-card">
+          <div className="stat-card-completed">
             <h3>{completedTasks}</h3>
             <p>Completed</p>
           </div>
@@ -153,7 +153,7 @@ const Dashboard = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="description">Description (Optional)</label>
+                <label htmlFor="description">Description</label>
                 <textarea
                   id="description"
                   value={taskDescription}
@@ -164,7 +164,7 @@ const Dashboard = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="deadline">Deadline (Optional)</label>
+                <label htmlFor="deadline">Deadline</label>
                 <input
                   type="datetime-local"
                   id="deadline"

@@ -8,7 +8,12 @@ import Dashboard from './pages/Dashboard';
 import './App.css';
 
 function AppRoutes() {
-  const {user} = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    // Hiển thị spinner hoặc blank khi đang xác thực phiên
+    return <div className="app-loading" style={{textAlign:'center',marginTop:'20vh'}}><span>Đang kiểm tra phiên đăng nhập...</span></div>;
+  }
 
   return (
     <Routes>

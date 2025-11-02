@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { loginAPI, getMyInfoAPI, registerAPI, logoutAPI } from '../API/authAPI';
 
 const AuthContext = createContext();
 
@@ -13,61 +14,69 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Khôi phục phiên đăng nhập từ token
   useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    const restoreSession = async () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const userData = await getMyInfoAPI();
+          setUser(userData);
+        } catch (error) {
+          console.error('Lỗi khi khôi phục phiên:', error);
+          localStorage.removeItem('authToken');
+        }
+      }
+      setLoading(false);
+    };
+
+    restoreSession();
   }, []);
 
-  //Đăng nhập
-  const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const foundUser = users.find(u => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const userSession = { id: foundUser.id, name: foundUser.name, email: foundUser.email };
-      setUser(userSession);
-      localStorage.setItem('currentUser', JSON.stringify(userSession));
+  // Đăng nhập
+  const login = async (username, password) => {
+    try {
+      const result = await loginAPI(username, password);
+      const token = result.token;
+      localStorage.setItem('authToken', token);
+
+      // Lấy thông tin user từ token
+      const userData = await getMyInfoAPI();
+      setUser(userData);
       return { success: true };
-    } else {
-      return { success: false, message: 'Sai email hoặc mật khẩu' };
+    } catch (error) {
+      return { success: false, message: error.message || 'Không thể kết nối đến server' };
     }
   };
 
-  //Đăng ký
-  const register = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    //check email đã tồn tại chưa
-    const existingUser = users.find(u => u.email === email);
-    if (existingUser) {
-      return { success: false, message: 'Email đã được đăng ký' };
+  // Đăng ký
+  const register = async (username, email, password) => {
+    try {
+      await registerAPI(username, email, password);
+      return { success: true, message: 'Đăng ký thành công! Vui lòng đăng nhập.' };
+    } catch (error) {
+      console.error('Lỗi đăng ký:', error);
+      return { success: false, message: error.message || 'Không thể kết nối đến server' };
     }
-    
-    //tạo user mới
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      password,
-      createdAt: new Date().toISOString()
-    };
-    
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    return { success: true, message: 'Đăng ký thành công! Vui lòng đăng nhập.' };
   };
 
-  const logout = () => {
+  // Đăng xuất
+  const logout = async () => {
+    try {
+      await logoutAPI();
+    } catch (error) {
+      console.error('Lỗi đăng xuất:', error);
+    }
+    
     setUser(null);
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
   };
 
   const value = {
     user,
+    loading,
     login,
     register,
     logout,

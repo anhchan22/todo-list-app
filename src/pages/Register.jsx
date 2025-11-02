@@ -4,17 +4,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const Register = () => {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!name || !email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
@@ -29,13 +29,17 @@ const Register = () => {
       return;
     }
     
-    const result = register(name, email, password);
-    
-    if (result.success) {
-      toast.success('Tạo tài khoản thành công!');
-      navigate('/login');
-    } else {
-      toast.error(result.message);
+    try {
+      const result = await register(username, email, password);
+      
+      if (result.success) {
+        toast.success('Tạo tài khoản thành công!');
+        navigate('/login');
+      } else {
+        toast.error(result.message || 'Đăng ký thất bại');
+      }
+    } catch (error) {
+      toast.error(error.message || 'Đăng ký thất bại');
     }
   };
 
@@ -48,13 +52,13 @@ const Register = () => {
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="name">Tên tài khoản</label>
+              <label htmlFor="username">Tên đăng nhập</label>
               <input
                 type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nhập tên tài khoản của bạn"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Nhập tên đăng nhập của bạn"
                 required
               />
             </div>

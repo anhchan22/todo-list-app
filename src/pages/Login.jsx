@@ -4,28 +4,33 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useAuth();
 
   //chuyen trang
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!username || !password) {
       toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
-    const result = login(email, password);
-    
-    if (result.success) {
-      toast.success('Đăng nhập thành công!');
-      navigate('/dashboard');
-    } else {
-      toast.error("Đăng nhập thất bại, vui lòng kiểm tra lại thông tin.");
+    try {
+      const result = await login(username, password);
+      
+      if (result && result.success) {
+        toast.success('Đăng nhập thành công!');
+        navigate('/dashboard');
+      } else {
+        toast.error(result?.message || 'Đăng nhập thất bại, vui lòng kiểm tra lại thông tin.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Đăng nhập thất bại, vui lòng kiểm tra lại thông tin.');
     }
   };
 
@@ -38,13 +43,13 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="username">Tên đăng nhập</label>
               <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Nhập email của bạn"
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Nhập tên đăng nhập của bạn"
                 required
               />
             </div>

@@ -1,7 +1,7 @@
-const API_BASE = ""; // Đổi thành domain API của bạn
+const API_BASE = ""; // Dùng proxy của Vite, không cần domain
 
 function getToken() {
-    return localStorage.getItem("token");
+    return localStorage.getItem("authToken"); 
 }
 
 export async function http(path, init = {}) {
@@ -23,6 +23,14 @@ export async function http(path, init = {}) {
         data = text;
     }
 
-    if (!res.ok) throw new Error((data && data.message) || res.statusText);
+    if (!res.ok) {
+        console.error('HTTP error:', {
+            status: res.status,
+            statusText: res.statusText,
+            responseText: text,
+            parsedData: data
+        });
+        throw new Error((data && data.message) || 'Uncategorized error');
+    }
     return data?.result ?? data;
 }

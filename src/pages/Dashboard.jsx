@@ -17,55 +17,80 @@ const Dashboard = () => {
     toast.success('Đăng xuất thành công');
   };
 
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
     if (!taskTitle.trim()) {
       toast.error('Tiêu đề công việc là bắt buộc');
       return;
     }
     
-    addTask(taskTitle, taskDescription, taskDeadline);
-    setTaskTitle('');
-    setTaskDescription('');
-    setTaskDeadline('');
-    setShowAddForm(false);
-    toast.success('Task đã được thêm thành công');
+    try {
+      await addTask(taskTitle, taskDescription, taskDeadline);
+      setTaskTitle('');
+      setTaskDescription('');
+      setTaskDeadline('');
+      setShowAddForm(false);
+      toast.success('Task đã được thêm thành công');
+    } catch {
+      toast.error('Không thể thêm task');
+    }
   };
 
   const handleEditTask = (task) => {
     setEditingTask(task);
     setTaskTitle(task.title);
-    setTaskDescription(task.description);
-    setTaskDeadline(task.deadline ? task.deadline.slice(0, 16) : '');
+    setTaskDescription(task.description || '');
+    // Chỉ lấy phần ngày yyyy-MM-dd
+    if (task.dueDate) {
+      setTaskDeadline(task.dueDate.split('T')[0]);
+    } else {
+      setTaskDeadline('');
+    }
     setShowAddForm(true);
   };
 
-  const handleUpdateTask = (e) => {
+  const handleUpdateTask = async (e) => {
     e.preventDefault();
     if (!taskTitle.trim()) {
       toast.error('Tiêu đề công việc là bắt buộc');
       return;
     }
     
-    updateTask(editingTask.id, { title: taskTitle, description: taskDescription, deadline: taskDeadline });
-    setTaskTitle('');
-    setTaskDescription('');
-    setTaskDeadline('');
-    setEditingTask(null);
-    setShowAddForm(false);
-    toast.success('Task đã được cập nhật thành công');
-  };
-
-  const handleDeleteTask = (taskId, taskTitle) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa "${taskTitle}"?`)) {
-      deleteTask(taskId);
-      toast.success('Task đã được xóa thành công');
+    try {
+      await updateTask(editingTask.id, { 
+        title: taskTitle, 
+        description: taskDescription, 
+        dueDate: taskDeadline 
+      });
+      setTaskTitle('');
+      setTaskDescription('');
+      setTaskDeadline('');
+      setEditingTask(null);
+      setShowAddForm(false);
+      toast.success('Task đã được cập nhật thành công');
+    } catch {
+      toast.error('Không thể cập nhật task');
     }
   };
 
-  const handleToggleComplete = (taskId) => {
-    toggleTaskComplete(taskId);
-    toast.success('Trạng thái công việc đã được cập nhật');
+  const handleDeleteTask = async (taskId, taskTitle) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa "${taskTitle}"?`)) {
+      try {
+        await deleteTask(taskId);
+        toast.success('Task đã được xóa thành công');
+      } catch {
+        toast.error('Không thể xóa task');
+      }
+    }
+  };
+
+  const handleToggleComplete = async (taskId) => {
+    try {
+      await toggleTaskComplete(taskId);
+      toast.success('Trạng thái công việc đã được cập nhật');
+    } catch {
+      toast.error('Không thể cập nhật trạng thái');
+    }
   };
 
   const cancelForm = () => {
@@ -76,23 +101,43 @@ const Dashboard = () => {
     setTaskDeadline('');
   };
 
-  const completedTasks = tasks.filter(task => task.completed).length;
-  const pendingTasks = tasks.filter(task => !task.completed).length;
+  const completedTasks = tasks.filter(task => task.status === 'DONE').length;
+  const pendingTasks = tasks.filter(task => task.status !== 'DONE').length;
 
-  // Sắp xếp tasks theo deadline
+  // Hàm kiểm tra task có overdue không
+  const isTaskOverdue = (task) => {
+    if (!task.dueDate || task.status === 'DONE') return false;
+    const deadlineDate = task.dueDate.includes('T')
+      ? new Date(task.dueDate)
+      : new Date(`${task.dueDate}T23:59:59`);
+    return deadlineDate < new Date();
+  };
+
+  // Sắp xếp tasks: Pending (chưa quá hạn) → Overdue → Completed
   const sortedTasks = [...tasks].sort((a, b) => {
-    // Completed tasks xuống cuối
-    if (a.completed && !b.completed) return 1;
-    if (!a.completed && b.completed) return -1;
+    const aOverdue = isTaskOverdue(a);
+    const bOverdue = isTaskOverdue(b);
     
-    // Nếu cả hai đều pending hoặc completed, sắp xếp theo deadline
-    if (a.deadline && b.deadline) {
-      return new Date(a.deadline) - new Date(b.deadline);
+    // Completed tasks xuống cuối cùng
+    if (a.status === 'DONE' && b.status !== 'DONE') return 1;
+    if (a.status !== 'DONE' && b.status === 'DONE') return -1;
+    
+    // Trong pending tasks: task chưa quá hạn lên trước, task overdue xuống sau
+    if (a.status !== 'DONE' && b.status !== 'DONE') {
+      if (!aOverdue && bOverdue) return -1; // a chưa overdue, b overdue → a lên trước
+      if (aOverdue && !bOverdue) return 1;  // a overdue, b chưa overdue → b lên trước
     }
-    if (a.deadline && !b.deadline) return -1; // Có deadline lên trước
-    if (!a.deadline && b.deadline) return 1;  // Không có deadline xuống sau
     
-    // Nếu không có deadline, sắp xếp theo thời gian tạo
+    // Cùng trạng thái (cùng overdue hoặc cùng pending), sắp xếp theo dueDate
+    if (a.dueDate && b.dueDate) {
+      const da = new Date(`${a.dueDate}T00:00`);
+      const db = new Date(`${b.dueDate}T00:00`);
+      return da - db;
+    }
+    if (a.dueDate && !b.dueDate) return -1;
+    if (!a.dueDate && b.dueDate) return 1;
+    
+    // Không có deadline, sắp xếp theo thời gian tạo
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
@@ -166,7 +211,7 @@ const Dashboard = () => {
               <div className="form-group">
                 <label htmlFor="deadline">Deadline</label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   id="deadline"
                   value={taskDeadline}
                   onChange={(e) => setTaskDeadline(e.target.value)}
@@ -192,19 +237,21 @@ const Dashboard = () => {
               <p>Create your first task to get started!</p>
             </div>
           ) : (
-            sortedTasks.map(task => (
-              <div key={task.id} className={`task-card ${task.completed ? 'completed' : ''}`}>
-                <div className="task-content">
+            sortedTasks.map(task => {
+              const isOverdue = isTaskOverdue(task);
+              return (
+                <div key={task.id} className={`task-card ${task.status === 'DONE' ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`}>
+                  <div className="task-content">
                   <div className="task-header">
-                    <h4 className={task.completed ? 'task-title completed' : 'task-title'}>
+                    <h4 className={task.status === 'DONE' ? 'task-title completed' : 'task-title'}>
                       {task.title}
                     </h4>
                     <div className="task-actions">
                       <button 
                         onClick={() => handleToggleComplete(task.id)}
-                        className={`toggle-btn ${task.completed ? 'completed' : 'pending'}`}
+                        className={`toggle-btn ${task.status === 'DONE' ? 'completed' : 'pending'}`}
                       >
-                        {task.completed ? '✓' : '○'}
+                        {task.status === 'DONE' ? '✓' : '○'}
                       </button>
                       <button 
                         onClick={() => handleEditTask(task)}
@@ -225,11 +272,19 @@ const Dashboard = () => {
                     <p className="task-description">{task.description}</p>
                   )}
                   
-                  {task.deadline && (
+                  {task.dueDate && (
                     <div className="task-deadline">
-                      <strong>Deadline:</strong> {new Date(task.deadline).toLocaleString('vi-VN')}
-                      {new Date(task.deadline) < new Date() && !task.completed && (
-                        <span className="overdue-badge"> (Overdue)</span>
+                      <strong>Deadline:</strong> {(() => {
+                        // Nếu dueDate có chữ T (có giờ), hiển thị cả ngày giờ
+                        if (task.dueDate.includes('T')) {
+                          return new Date(task.dueDate).toLocaleString('vi-VN');
+                        } else {
+                          // Chỉ có ngày, hiển thị dạng ngày
+                          return new Date(task.dueDate).toLocaleDateString('vi-VN');
+                        }
+                      })()}
+                      {isOverdue && (
+                        <span className="overdue-badge"> (OVERDUE)</span>
                       )}
                     </div>
                   )}
@@ -239,7 +294,8 @@ const Dashboard = () => {
                   </small>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </main>
